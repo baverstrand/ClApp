@@ -7,18 +7,36 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Configuration;
+using System.Linq;
+using System.Net;
+//using Microsoft.Azure.Documents;
+//using Microsoft.Azure.Documents.Client;
 
 namespace ClApp
 {
-    public static class Function1
+    public static class ClAppIt
     {
-        [FunctionName("Function1")]
+        [FunctionName("ClAppIt")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
 
+            if (req.Method.ToLower().Equals("get"))
+            {
+                // hämta alla complaints och skriv ut objektet
+                Console.WriteLine("Hej på dig du");
+
+            }
+            else if (req.Method.ToLower().Equals("post"))
+            {
+                // spara ny post med complaints i Db
+                Console.WriteLine("Hejdå");
+            }
+
+            Console.WriteLine(req.Method);
             string name = req.Query["name"];
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
