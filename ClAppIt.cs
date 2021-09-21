@@ -10,6 +10,11 @@ using Newtonsoft.Json;
 using System.Configuration;
 using System.Linq;
 using System.Net;
+using System.Threading;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Driver;
+
 //using Microsoft.Azure.Documents;
 //using Microsoft.Azure.Documents.Client;
 
@@ -22,32 +27,50 @@ namespace ClApp
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
+            var constring = Environment.GetEnvironmentVariable("CosmosDbConnectionString");
+            var client = new MongoClient(constring);
+            var db = client.GetDatabase("ClAppStorage");
+            var issues = db.GetCollection<Issue>("Issues");
+
             log.LogInformation("C# HTTP trigger function processed a request.");
 
             if (req.Method.ToLower().Equals("get"))
             {
-                // hämta alla complaints och skriv ut objektet
-                Console.WriteLine("Hej på dig du");
-
+                var allIssues = await issues.FindAsync(FilterDefinition<Issue>.Empty);
+                var result = allIssues.ToList().Select(i => new {i.CustomerName, i.ProblemDescription});
+                return new OkObjectResult(result);
             }
             else if (req.Method.ToLower().Equals("post"))
             {
-                // spara ny post med complaints i Db
-                Console.WriteLine("Hejdå");
+                var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                var issue = JsonConvert.DeserializeObject<Issue>(requestBody);
+
+                await issues.InsertOneAsync(issue);
+                return new CreatedResult("", issue);
             }
 
-            Console.WriteLine(req.Method);
-            string name = req.Query["name"];
-
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            name = name ?? data?.name;
-
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}. This HTTP triggered function executed successfully.";
-
-            return new OkObjectResult(responseMessage);
+            return new OkObjectResult(null);
         }
+
+        public class Issue
+        {
+            [BsonIgnoreIfDefault]
+            [BsonRepresentation(BsonType.ObjectId)]
+            public string _id { get; set; }
+            //[JsonProperty("customerId")]
+            public int CustomerId { get; set; }
+            //[JsonProperty("customerName")]
+            public string CustomerName { get; set; }
+            //[JsonProperty("problemDescription")]
+            public string ProblemDescription { get; set; }
+        }
+
+        public static Issue CreateIssue(int customerId, string customerName, string problemDescription) =>
+            new Issue
+            {
+                CustomerId = customerId, 
+                CustomerName = customerName, 
+                ProblemDescription = problemDescription
+            };
     }
 }
