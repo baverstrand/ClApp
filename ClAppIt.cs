@@ -46,7 +46,7 @@ namespace ClApp
                 var issue = JsonConvert.DeserializeObject<Issue>(requestBody);
 
                 await issues.InsertOneAsync(issue);
-                return new CreatedResult("", issue);
+                return new CreatedResult("", issue.customerName);
             }
 
             return new OkObjectResult(null);
