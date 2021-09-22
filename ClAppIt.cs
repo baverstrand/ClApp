@@ -15,9 +15,6 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 
-//using Microsoft.Azure.Documents;
-//using Microsoft.Azure.Documents.Client;
-
 namespace ClApp
 {
     public static class ClAppIt
@@ -43,13 +40,21 @@ namespace ClApp
             else if (req.Method.ToLower().Equals("post"))
             {
                 var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-                var issue = JsonConvert.DeserializeObject<Issue>(requestBody);
-
+                Issue issue;
+                try
+                {
+                    issue = JsonConvert.DeserializeObject<Issue>(requestBody);
+                }
+                catch (System.Exception)
+                {
+                   return new BadRequestObjectResult("No valid input. Please try again.");
+                }
                 await issues.InsertOneAsync(issue);
-                return new CreatedResult("", issue.customerName);
+                
+                var message = $"{issue.CustomerName} is registered.";
+                return new OkObjectResult(message);
             }
-
-            return new OkObjectResult(null);
+            return new BadRequestObjectResult("Invalid request. Please try again.");
         }
 
         public class Issue
@@ -57,11 +62,8 @@ namespace ClApp
             [BsonIgnoreIfDefault]
             [BsonRepresentation(BsonType.ObjectId)]
             public string _id { get; set; }
-            //[JsonProperty("customerId")]
             public int CustomerId { get; set; }
-            //[JsonProperty("customerName")]
             public string CustomerName { get; set; }
-            //[JsonProperty("problemDescription")]
             public string ProblemDescription { get; set; }
         }
 
