@@ -1,4 +1,0 @@
-﻿- Rätta till felet med att peka på "MSBUILD : error MSB1011: Specify which project or solution file to use because this folder contains more than one project or solution file."
-Är det csproj /sln som är problemet?? 
-
-- Kommer det funka med localsettings nu??
